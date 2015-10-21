@@ -1,10 +1,15 @@
 # AutoAddTLS
 Cubometa AutoAddTLS automates enabling and configuring TLS, HSTS and related settings in an Apache server.
 
-## Features (projected)
-* Enables the Apache SSL/TLS module.
-* Enables, modifies and disables the HSTS header.
-* Enables, modifies and disables the HPKP header.
+## Features
+* Enable the Apache SSL/TLS module.
+* Install a new TLS certificate.
+
+## Projected features
+* Enable, modify and disable the HSTS header.
+* Enable, modify and disable the HPKP header.
+* Disable the Apache SSL/TLS module.
+* Remove an installed TLS certificate.
 
 ## Progress
-Currently it only prints the steps without doing them.
+The current version, version 1.0, should work correctly on recent Linux operating systems which have Apache 2 installed.
