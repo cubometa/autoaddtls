@@ -1,61 +1,88 @@
 #!/bin/bash
 
-# Cubometa AutoAddTLS, version 1.1
-# Sun, Oct 11, 2015 through Sat, Oct 17, 2015, Mon, Oct 19, 2015 through Thu, Oct 22, 2015
+# Cubometa AutoAddTLS, version 1.1.1
+# Sun, Oct 11, 2015 through Sat, Oct 17, 2015, Mon, Oct 19, 2015 through Thu, Oct 22, 2015,
+# Tue, Nov 10, 2015 through Thu, Nov 12, 2015
 # (c) 2015 Ale Navarro (cubometa.com)
 
 helptext() {
-	echo "Cubometa AutoAddTLS, version 1.1"
-	echo -n "usage: ./autoaddtls.sh [--enablemod] [--certfile cert.crt --certkeyfile certkey.key"
-	echo " --certchainfile certchain.pem [--tlsconffile tlsconffile.conf] [--tlscertdir certdirectory]]"
-	echo "                       [--hstsmaxage seconds [--apacheconffile apacheconffile.conf] [--hstspreload [0|1]] [--hstsincludesubdomains [0|1]]]"
-	echo "       ./autoaddtls.sh [--help|-h]"
+echo "Cubometa AutoAddTLS, version 1.1.1"
+echo    "usage: ./autoaddtls.sh [--enablemod]"
+echo -n "                       [--certfile cert.crt --certkeyfile certkey.key"
+echo -n " --certchainfile certchain.pem [--tlsconffile tlsconffile.conf]"
+echo    " [--tlscertdir certdirectory]]"
+echo -n "                       [--hstsmaxage seconds [--apacheconffile"
+echo -n " apacheconffile.conf] [--hstspreload [0|1]] [--hstsincludesubdomains"
+echo    " [0|1]]]"
+echo    "       ./autoaddtls.sh [--help|-h]"
 
-	if [ $1 ]; then
-		echo "Cubometa AutoAddTLS automates enabling and configuring TLS, HSTS and related settings in an Apache server."
-		echo
-		echo "Enabling the Apache TLS module"
-		echo "--enablemod: Enable the Apache TLS module."
-		echo
-		echo "Configuring the TLS certificate in Apache"
-		echo "--certfile              (required): Specifies the path of the certificate (a .crt file)."
-		echo "--certkeyfile           (required): Specifies the path of the certificate key (a .key file)."
-		echo "--certchainfile         (required): Specifies the path of the certificate chain (a .pem file)."
-		echo "--tlsconffile           (optional): Specifies the path of the Apache configuration file for the TLS-enabled"
-		echo "                                    site (a .conf file, default: /etc/apache2/sites-enabled/default-ssl.conf)."
-		echo "--tlscertdir            (optional): Specifies the path the certificate files will be saved into (a directory,"
-		echo "                                    default: /etc/apache2/tlscerts). If it does not exist, it is created (but"
-		echo "                                    the parent directory has to)."
-		echo
-		echo "Enabling HSTS"
-		echo "--hstsmaxage            (required): Specifies the number of seconds to display in the HSTS header. The site"
-		echo "                                    should work via HTTPS for those many seconds after each response that"
-		echo "                                    includes this header with that value, as no clear HTTP requests will be"
-		echo "                                    placed by HSTS-aware browsers for that period of time. Each time this flag"
-		echo "                                    is received by such a browser in a response, the timer is set to the"
-		echo "                                    received value. 1 year is about 31536000 seconds. Setting the HSTS max-age"
-		echo "                                    to 0 is not the same as not setting the HSTS header."
-		echo "--apacheconffile        (optional): Specifies the path of the general Apache configuration file (a .conf file,"
-		echo "                                    default: /etc/apache2/apache2.conf)."
-		echo "--hstspreload           (optional): Specifies if the preload flag is set on the HSTS header. 0 means no,"
-		echo "                                    1 means yes (default: 0). It has to be set to the desired value each time"
-		echo "                                    the HSTS header is changed, even if the value does not change. Merely"
-		echo "                                    setting the flag is not the same as signing up on a HSTS preload list, but"
-		echo "                                    it is probably a requisite for doing so."
-		echo "--hstsincludesubdomains (optional): Specifies if the includeSubDomains flag is set on the HSTS header. 0 means"
-		echo "                                    no, 1 means yes (default: 0). It has to be set to the desired value each"
-		echo "                                    time the HSTS header is changed, even if the value does not change."
-		echo
-		echo "Getting help"
-		echo "--help, -h: Show this help text."
-	fi
+if [ $1 ]; then
+    echo -n "Cubometa AutoAddTLS automates enabling and configuring TLS, HSTS"
+    echo " and related settings in an Apache server."
+    echo
+    echo "Enabling the Apache TLS module"
+    echo "--enablemod:"
+    echo "    Enable the Apache TLS module."
+    echo
+    echo "Configuring the TLS certificate in Apache"
+    echo "--certfile (required):"
+    echo "    Specifies the path of the certificate (a .crt file)."
+    echo "--certkeyfile (required):"
+    echo "    Specifies the path of the certificate key (a .key file)."
+    echo "--certchainfile (required):"
+    echo "    Specifies the path of the certificate chain (a .pem file)."
+    echo "--tlsconffile (optional):"
+    echo "    Specifies the path of the Apache configuration file for the"
+    echo "    TLS-enabled site (a .conf file, default:"
+    echo "    /etc/apache2/sites-enabled/default-ssl.conf)."
+    echo "--tlscertdir (optional):"
+    echo "    Specifies the path the certificate files will be saved into (a"
+    echo "    directory, default: /etc/apache2/tlscerts). If it does not exist,"
+    echo "    it is created (but the parent directory has to exist)."
+    echo
+    echo "Enabling HSTS"
+    echo "--hstsmaxage (required):"
+    echo "    Specifies the number of seconds to display in the HSTS header."
+    echo "    The site should work via HTTPS for those many seconds after each"
+    echo "    response that includes this header with that value is served or"
+    echo "    else the site will stop working at all for every user that"
+    echo "    received the header until it expires for them, as no clear HTTP"
+    echo "    requests to the site will be placed by HSTS-aware browsers for"
+    echo "    that period of time. Each time such a browser receives this flag"
+    echo "    in an HTTPS response, the timer is set to the received value."
+    echo "    1 year is about 31536000 seconds. Setting the HSTS max-age to 0"
+    echo "    is not the same as not setting the HSTS header."
+    echo "--apacheconffile (optional):"
+    echo "    Specifies the path of the general Apache configuration file (a"
+    echo "    .conf file, default: /etc/apache2/apache2.conf)."
+    echo "--hstspreload (optional):"
+    echo "    Specifies if the preload flag is set on the HSTS header. 0 means"
+    echo "    no, 1 means yes (default: 0). This parameter has to be set to"
+    echo "    the desired value each time the HSTS header is set, even if the"
+    echo "    value does not change. Merely setting the flag is not the same as"
+    echo "    signing up on a HSTS preload list, but it is probably a requisite"
+    echo "    for doing so."
+    echo "--hstsincludesubdomains (optional):"
+    echo "    Specifies if the includeSubDomains flag is set on the HSTS"
+    echo "    header. 0 means no, 1 means yes (default: 0). This parameter has"
+    echo "    to be set to the desired value each time the HSTS header is set,"
+    echo "    even if the value does not change."
+    echo
+    echo "Getting help"
+    echo "--help, -h:"
+    echo "    Show this help text."
+fi
 }
 
 getpath() {
 	if [ $# -eq 1 ]; then echo "A file must be specified for each parameter of the certificate."; exit 1; fi
 	if [ "$2" == "-" ]; then echo "Files cannot be read from stdin."; exit 1; fi
 	if [ "${2:0:1}" == "-" ]; then echo "A file must be specified for each parameter of the certificate."; exit 1; fi
-	export GETPATH="$2"
+	if [ "${2:0:1}" == "/" ]; then
+		export GETPATH="$2"
+	else
+		export GETPATH="${PWD}/$2"
+	fi
 	shift
 }
 
@@ -90,7 +117,7 @@ while [ $# -gt 0 ]; do
 			certchainfile)         getpath; export CERTCHAINFILE="$GETPATH"; export UPDATINGCERT=$(($UPDATINGCERT&4));;
 			tlsconffile)           getpath; export TLSCONFFILE="$GETPATH"; export UPDATINGCERT=$(($UPDATINGCERT&8));;
 			tlscertdir)            getpath; export TLSCERTDIR="$GETPATH"; export UPDATINGCERT=$(($UPDATINGCERT&16));;
-			hstsmaxage)            gethstsmaxage; export HSTSMAXAGE="$GETHSTSMAXAGE"; export HSTSCHANGES=1;;
+			hstsmaxage)            gethstsmaxage; export HSTSMAXAGE="$GETHSTSMAXAGE"; export HSTSCHANGES=$(($HSTSCHANGES&1));;
 			apacheconffile)        getpath; export APACHECONFFILE="$GETPATH"; export HSTSCHANGES=$(($HSTSCHANGES&2));;
 			hstspreload)           getbit; export HSTSPRELOAD="$GETBIT"; export HSTSCHANGES=$(($HSTSCHANGES&2));;
 			hstsincludesubdomains) getbit; export HSTSINCLSUBDOMAINS="$GETBIT"; export HSTSCHANGES=$(($HSTSCHANGES&2));;
@@ -118,9 +145,9 @@ if [ $UPDATINGCERT -ne 0 ]; then
 		exit 1
 	fi
 		
-	echo "Certificate file: $CERTFILE \(" `which $CERTFILE` "\)"
-	echo "Certificate key file: $CERTKEYFILE \(" `which $CERTKEYFILE` "\)"
-	echo "Certificate chain file: $CERTCHAINFILE \(" `which $CERTCHAINFILE` "\)"
+	echo "Certificate file: $CERTFILE"
+	echo "Certificate key file: $CERTKEYFILE"
+	echo "Certificate chain file: $CERTCHAINFILE"
 	
 	if [ ! $TLSCONFFILE ]; then
 		export TLSCONFFILE="/etc/apache2/sites-enabled/default-ssl.conf"
