@@ -1,6 +1,6 @@
 # AutoAddTLS
 Cubometa AutoAddTLS automates enabling and configuring TLS, HSTS and related settings in an Apache server.
-The current version, version 1.1.1, should work correctly on recent Linux operating systems which have Apache 2 installed.
+The current version, version 1.1.2, should work correctly on recent Linux operating systems which have Apache 2 installed.
 
 ## Features
 * Enable the Apache SSL/TLS module.

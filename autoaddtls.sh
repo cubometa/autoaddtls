@@ -1,19 +1,19 @@
 #!/bin/bash
 
-# Cubometa AutoAddTLS, version 1.1.1
+# Cubometa AutoAddTLS, version 1.1.2
 # Sun, Oct 11, 2015 through Sat, Oct 17, 2015, Mon, Oct 19, 2015 through Thu, Oct 22, 2015,
-# Tue, Nov 10, 2015 through Thu, Nov 12, 2015
+# Tue, Nov 10, 2015 through Sat, Nov 14, 2015
 # (c) 2015 Ale Navarro (cubometa.com)
 
 helptext() {
-echo "Cubometa AutoAddTLS, version 1.1.1"
+echo "Cubometa AutoAddTLS, version 1.1.2"
 echo    "usage: ./autoaddtls.sh [--enablemod]"
 echo -n "                       [--certfile cert.crt --certkeyfile certkey.key"
 echo -n " --certchainfile certchain.pem [--tlsconffile tlsconffile.conf]"
 echo    " [--tlscertdir certdirectory]]"
-echo -n "                       [--hstsmaxage seconds [--apacheconffile"
-echo -n " apacheconffile.conf] [--hstspreload [0|1]] [--hstsincludesubdomains"
-echo    " [0|1]]]"
+echo -n "                       [--hstsmaxage seconds [--hstspreload [0|1]]"
+echo -n " [--hstsincludesubdomains [0|1]] [--apacheconffile"
+echo " apacheconffile.conf] [--tlsconffile tlsconffile.conf]]"
 echo    "       ./autoaddtls.sh [--help|-h]"
 
 if [ $1 ]; then
@@ -52,9 +52,6 @@ if [ $1 ]; then
     echo "    in an HTTPS response, the timer is set to the received value."
     echo "    1 year is about 31536000 seconds. Setting the HSTS max-age to 0"
     echo "    is not the same as not setting the HSTS header."
-    echo "--apacheconffile (optional):"
-    echo "    Specifies the path of the general Apache configuration file (a"
-    echo "    .conf file, default: /etc/apache2/apache2.conf)."
     echo "--hstspreload (optional):"
     echo "    Specifies if the preload flag is set on the HSTS header. 0 means"
     echo "    no, 1 means yes (default: 0). This parameter has to be set to"
@@ -67,6 +64,13 @@ if [ $1 ]; then
     echo "    header. 0 means no, 1 means yes (default: 0). This parameter has"
     echo "    to be set to the desired value each time the HSTS header is set,"
     echo "    even if the value does not change."
+    echo "--apacheconffile (optional):"
+    echo "    Specifies the path of the general Apache configuration file (a"
+    echo "    .conf file, default: /etc/apache2/apache2.conf)."
+    echo "--tlsconffile (optional):"
+    echo "    Specifies the path of the Apache configuration file for the"
+    echo "    TLS-enabled site (a .conf file, default:"
+    echo "    /etc/apache2/sites-enabled/default-ssl.conf)."
     echo
     echo "Getting help"
     echo "--help, -h:"
@@ -97,7 +101,7 @@ getbit() {
 	if [ $# -eq 1 ]; then echo "A value must be specified for the HSTS preload and includeSubDomains flags."; exit 1; fi
 	if [ "$2" != "0" ]; then
 		if [ "$2" != "1" ]; then
-			echo "The value specified for the HSTS preload and includeSubDomains flags should be 0 or 1"; exit 1;
+			echo "The specified value for the HSTS preload and includeSubDomains flags should be 0 or 1."; exit 1;
 		fi
 	fi
 	export GETBIT="$2"
@@ -115,10 +119,10 @@ while [ $# -gt 0 ]; do
 			certfile)              getpath; export CERTFILE="$GETPATH"; export UPDATINGCERT=$(($UPDATINGCERT&1));;
 			certkeyfile)           getpath; export CERTKEYFILE="$GETPATH"; export UPDATINGCERT=$(($UPDATINGCERT&2));;
 			certchainfile)         getpath; export CERTCHAINFILE="$GETPATH"; export UPDATINGCERT=$(($UPDATINGCERT&4));;
-			tlsconffile)           getpath; export TLSCONFFILE="$GETPATH"; export UPDATINGCERT=$(($UPDATINGCERT&8));;
+			tlsconffile)           getpath; export TLSCONFFILE="$GETPATH";;
 			tlscertdir)            getpath; export TLSCERTDIR="$GETPATH"; export UPDATINGCERT=$(($UPDATINGCERT&16));;
 			hstsmaxage)            gethstsmaxage; export HSTSMAXAGE="$GETHSTSMAXAGE"; export HSTSCHANGES=$(($HSTSCHANGES&1));;
-			apacheconffile)        getpath; export APACHECONFFILE="$GETPATH"; export HSTSCHANGES=$(($HSTSCHANGES&2));;
+			apacheconffile)        getpath; export APACHECONFFILE="$GETPATH";;
 			hstspreload)           getbit; export HSTSPRELOAD="$GETBIT"; export HSTSCHANGES=$(($HSTSCHANGES&2));;
 			hstsincludesubdomains) getbit; export HSTSINCLSUBDOMAINS="$GETBIT"; export HSTSCHANGES=$(($HSTSCHANGES&2));;
 			*)                     helptext; exit 1;;
@@ -148,6 +152,11 @@ if [ $UPDATINGCERT -ne 0 ]; then
 	echo "Certificate file: $CERTFILE"
 	echo "Certificate key file: $CERTKEYFILE"
 	echo "Certificate chain file: $CERTCHAINFILE"
+	
+	if [ ! $APACHECONFFILE ]; then
+		export APACHECONFFILE="/etc/apache2/apache2.conf"
+	fi
+	echo "Apache configuration file: $APACHECONFFILE"
 	
 	if [ ! $TLSCONFFILE ]; then
 		export TLSCONFFILE="/etc/apache2/sites-enabled/default-ssl.conf"
@@ -220,8 +229,13 @@ fi
 
 if [ $HSTSCHANGES -ne 0 ]; then
 	if [ $HSTSCHANGES -eq 2 ]; then
-		echo "The apache configuration file, HSTS include subdomains and HSTS preload require setting an HSTS max-age."; exit 1;
+		echo "The HSTS includeSubdomains and HSTS preload require setting an HSTS max-age."; exit 1;
 	fi
+
+	if [ ! $TLSCONFFILE ]; then
+		export TLSCONFFILE="/etc/apache2/sites-enabled/default-ssl.conf"
+	fi
+	echo "TLS configuration file: $TLSCONFFILE"
 	
 	if [ ! `grep -q "LoadModule headers_module" $APACHECONFFILE` ]; then
 		echo "LoadModule headers_module /usr/lib/apache2/modules/mod_headers.so" >> "$APACHECONFFILE"
@@ -236,5 +250,5 @@ if [ $HSTSCHANGES -ne 0 ]; then
 	if [ $HSTSPRELOAD -eq 1 ]; then
 		export HSTSPRELOADCONF="; preload"
 	fi
-	echo "Header always set Strict-Transport-Security \"max-age=${HSTSMAXAGE}${HSTSINCLSUBDOMAINSCONF}${HSTSPRELOADCONF}\"" >> $APACHECONFFILE
+	echo "Header always set Strict-Transport-Security \"max-age=${HSTSMAXAGE}${HSTSINCLSUBDOMAINSCONF}${HSTSPRELOADCONF}\"" >> $TLSCONFFILE
 fi
