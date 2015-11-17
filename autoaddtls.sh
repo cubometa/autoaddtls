@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Cubometa AutoAddTLS, version 1.1.2
+# Cubometa AutoAddTLS, version 1.1.3
 # Sun, Oct 11, 2015 through Sat, Oct 17, 2015, Mon, Oct 19, 2015 through Thu, Oct 22, 2015,
-# Tue, Nov 10, 2015 through Sat, Nov 14, 2015
+# Tue, Nov 10, 2015 through Sun, Nov 15, 2015, Tue, Nov 17, 2015
 # (c) 2015 Ale Navarro (cubometa.com)
 
 helptext() {
-echo "Cubometa AutoAddTLS, version 1.1.2"
+echo "Cubometa AutoAddTLS, version 1.1.3"
 echo    "usage: ./autoaddtls.sh [--enablemod]"
 echo -n "                       [--certfile cert.crt --certkeyfile certkey.key"
 echo -n " --certchainfile certchain.pem [--tlsconffile tlsconffile.conf]"
@@ -221,9 +221,9 @@ if [ $UPDATINGCERT -ne 0 ]; then
 	echo "Moving certificate chain file $CERTCHAINFILE to $CONFCERTCHAINFILE"
 	chmod 644 $CONFCERTCHAINFILE
 	
-	sed "s/SSLCertificateFile(.*)/SSLCertificateFile ${CONFCERTFILE//\//\\/}/g" $TLSCONFFILE
-	sed "s/SSLCertificateKeyFile(.*)/SSLCertificateKeyFile ${CONFCERTKEYFILE//\//\\/}/g" $TLSCONFFILE
-	sed "s/SSLCertificateChainFile(.*)/SSLCertificateChainFile ${CONFCERTCHAINFILE//\//\\/}/g" $TLSCONFFILE
+	sed -i "" "s/SSLCertificateFile(.*)/SSLCertificateFile ${CONFCERTFILE//\//\\/}/g" $TLSCONFFILE
+	sed -i "" "s/SSLCertificateKeyFile(.*)/SSLCertificateKeyFile ${CONFCERTKEYFILE//\//\\/}/g" $TLSCONFFILE
+	sed -i "" "s/SSLCertificateChainFile(.*)/SSLCertificateChainFile ${CONFCERTCHAINFILE//\//\\/}/g" $TLSCONFFILE
 	echo "Modifying the Apache TLS configuration file $TLSCONFFILE with the certificate"
 fi
 
@@ -249,6 +249,10 @@ if [ $HSTSCHANGES -ne 0 ]; then
 	fi
 	if [ $HSTSPRELOAD -eq 1 ]; then
 		export HSTSPRELOADCONF="; preload"
+	fi
+
+	if [ `grep -q "Header always set Strict-Transport-Security" $TLSCONFFILE` ]; then
+		sed -i "" "/Header always set Strict-Transport-Security/D"
 	fi
 	echo "Header always set Strict-Transport-Security \"max-age=${HSTSMAXAGE}${HSTSINCLSUBDOMAINSCONF}${HSTSPRELOADCONF}\"" >> $TLSCONFFILE
 fi
