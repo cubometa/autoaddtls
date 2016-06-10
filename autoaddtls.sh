@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# Cubometa AutoAddTLS, version 1.1.3
+# Cubometa AutoAddTLS, version 1.1.4
 # Sun, Oct 11, 2015 through Sat, Oct 17, 2015, Mon, Oct 19, 2015 through Thu, Oct 22, 2015,
-# Tue, Nov 10, 2015 through Sun, Nov 15, 2015, Tue, Nov 17, 2015
-# (c) 2015 Ale Navarro (cubometa.com)
+# Tue, Nov 10, 2015 through Sun, Nov 15, 2015, Tue, Nov 17, 2015, Fri, Jun 10, 2016
+# (c) 2015~2016 Ale Navarro (cubometa.com)
 
 helptext() {
-echo "Cubometa AutoAddTLS, version 1.1.3"
-echo    "usage: ./autoaddtls.sh [--enablemod]"
+echo "Cubometa AutoAddTLS, version 1.1.4"
+echo    "usage: ./autoaddtls.sh [--enablemod|--disablemod]"
 echo -n "                       [--certfile cert.crt --certkeyfile certkey.key"
 echo -n " --certchainfile certchain.pem [--tlsconffile tlsconffile.conf]"
 echo    " [--tlscertdir certdirectory]]"
@@ -20,9 +20,11 @@ if [ $1 ]; then
     echo -n "Cubometa AutoAddTLS automates enabling and configuring TLS, HSTS"
     echo " and related settings in an Apache server."
     echo
-    echo "Enabling the Apache TLS module"
+    echo "Enabling or disabling the Apache TLS module"
     echo "--enablemod:"
     echo "    Enable the Apache TLS module."
+    echo "--disablemod:"
+    echo "    Disable the Apache TLS module."
     echo
     echo "Configuring the TLS certificate in Apache"
     echo "--certfile (required):"
@@ -36,13 +38,14 @@ if [ $1 ]; then
     echo "    TLS-enabled site (a .conf file, default:"
     echo "    /etc/apache2/sites-enabled/default-ssl.conf)."
     echo "--tlscertdir (optional):"
-    echo "    Specifies the path the certificate files will be saved into (a"
+    echo "    Specifies the path the certificate files will be copied into (a"
     echo "    directory, default: /etc/apache2/tlscerts). If it does not exist,"
     echo "    it is created (but the parent directory has to exist)."
     echo
-    echo "Enabling HSTS"
+    echo "Enabling or disabling HSTS"
     echo "--hstsmaxage (required):"
-    echo "    Specifies the number of seconds to display in the HSTS header."
+    echo "    Specifies the number of seconds to display in the HSTS header (or
+    echo "    the value - to disable the HSTS header)."
     echo "    The site should work via HTTPS for those many seconds after each"
     echo "    response that includes this header with that value is served or"
     echo "    else the site will stop working at all for every user that"
@@ -92,7 +95,11 @@ getpath() {
 
 gethstsmaxage() {
 	if [ $# -eq 1 ]; then echo "A value must be specified for the HSTS max age."; exit 1; fi
-	if [[ ! "$2" =~ ^[0-9]+$ ]]; then echo "The specified value for the HSTS max age must be numerical."; exit 1; fi
+	if [[ ! "$2" =~ ^[0-9]+$ ]]; then
+		if [ "$2" != "-" ]; then
+			echo "The specified value for the HSTS max age must be numerical."; exit 1;
+		fi
+	fi
 	export GETHSTSMAXAGE="$2"
 	shift
 }
@@ -108,14 +115,15 @@ getbit() {
 	shift
 }
 
-export ENABLETLSMODULE=0
+export ENDISTLSMODULE=0
 export UPDATINGCERT=0
 export HSTSCHANGES=0
 
 while [ $# -gt 0 ]; do
 	if [ "${1:0:2}" == "--" ]; then
 		case "${1:2}" in
-			enablemod)             export ENABLETLSMODULE=1;;
+			enablemod)             export ENDISTLSMODULE=1;;
+			disablemod)            export ENDISTLSMODULE=2;;
 			certfile)              getpath; export CERTFILE="$GETPATH"; export UPDATINGCERT=$(($UPDATINGCERT&1));;
 			certkeyfile)           getpath; export CERTKEYFILE="$GETPATH"; export UPDATINGCERT=$(($UPDATINGCERT&2));;
 			certchainfile)         getpath; export CERTCHAINFILE="$GETPATH"; export UPDATINGCERT=$(($UPDATINGCERT&4));;
@@ -136,11 +144,18 @@ while [ $# -gt 0 ]; do
 	shift
 done
 
-if [ $ENABLETLSMODULE -eq 1 ]; then
+if [ $ENDISTLSMODULE -eq 1 ]; then
 	echo "Enabling Apache TLS module..."
 	sudo a2enmod ssl
 	sudo service apache2 restart
 	echo "Apache TLS module enabled."
+fi
+
+if [ $ENDISTLSMODULE -eq 2 ]; then
+	echo "Disabling Apache TLS module..."
+	sudo a2dismod ssl
+	sudo service apache2 restart
+	echo "Apache TLS module disabled."
 fi
 
 if [ $UPDATINGCERT -ne 0 ]; then
@@ -231,6 +246,12 @@ if [ $HSTSCHANGES -ne 0 ]; then
 	if [ $HSTSCHANGES -eq 2 ]; then
 		echo "The HSTS includeSubdomains and HSTS preload require setting an HSTS max-age."; exit 1;
 	fi
+	
+	if [ $HSTSCHANGES -eq 3 ]; then
+		if [ $HSTSMAXAGE == "-" ]; then
+			echo "Cannot set HSTS includeSubdomains or HSTS preload if removing the HSTS header."; exit 1;
+		fi
+	fi
 
 	if [ ! $TLSCONFFILE ]; then
 		export TLSCONFFILE="/etc/apache2/sites-enabled/default-ssl.conf"
@@ -254,5 +275,8 @@ if [ $HSTSCHANGES -ne 0 ]; then
 	if [ `grep -q "Header always set Strict-Transport-Security" $TLSCONFFILE` ]; then
 		sed -i "" "/Header always set Strict-Transport-Security/D"
 	fi
-	echo "Header always set Strict-Transport-Security \"max-age=${HSTSMAXAGE}${HSTSINCLSUBDOMAINSCONF}${HSTSPRELOADCONF}\"" >> $TLSCONFFILE
+	
+	if [ $HSTSMAXAGE != "-" ]; then
+		echo "Header always set Strict-Transport-Security \"max-age=${HSTSMAXAGE}${HSTSINCLSUBDOMAINSCONF}${HSTSPRELOADCONF}\"" >> $TLSCONFFILE
+	fi
 fi
