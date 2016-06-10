@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Cubometa AutoAddTLS, version 1.1.4
+# Cubometa AutoAddTLS, version 1.1.5
 # Sun, Oct 11, 2015 through Sat, Oct 17, 2015, Mon, Oct 19, 2015 through Thu, Oct 22, 2015,
 # Tue, Nov 10, 2015 through Sun, Nov 15, 2015, Tue, Nov 17, 2015, Fri, Jun 10, 2016
 # (c) 2015~2016 Ale Navarro (cubometa.com)
 
 helptext() {
-echo "Cubometa AutoAddTLS, version 1.1.4"
+echo "Cubometa AutoAddTLS, version 1.1.5"
 echo    "usage: ./autoaddtls.sh [--enablemod|--disablemod]"
 echo -n "                       [--certfile cert.crt --certkeyfile certkey.key"
 echo -n " --certchainfile certchain.pem [--tlsconffile tlsconffile.conf]"
@@ -44,7 +44,7 @@ if [ $1 ]; then
     echo
     echo "Enabling or disabling HSTS"
     echo "--hstsmaxage (required):"
-    echo "    Specifies the number of seconds to display in the HSTS header (or
+    echo "    Specifies the number of seconds to display in the HSTS header (or"
     echo "    the value - to disable the HSTS header)."
     echo "    The site should work via HTTPS for those many seconds after each"
     echo "    response that includes this header with that value is served or"
